@@ -18,7 +18,7 @@ Angular.js directives for semantic ui modules. Check `demos/` folder for usages.
 
 * Install semanticular
 ```
-bower install dgurkaynak/semanticular
+bower install semanticular
 ```
 or download this repo.
 
