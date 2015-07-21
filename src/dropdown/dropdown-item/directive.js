@@ -11,7 +11,7 @@ angular.module('semanticular.dropdown').directive('dropdownItem', function() {
 
         // Listen destroy event and remove item
         scope.$on('$destroy', function() {
-            dropdownController.removeItem(title, value);
+            dropdownController.removeItem(value);
         });
     };
 

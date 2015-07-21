@@ -17,13 +17,14 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
 
     /**
      * Removes item.
-     * @param {string} text
      * @param {string} value
      */
-    this.removeItem = function(title, value) {
-        var index = $scope.items.indexOf({
-            title: title,
-            value: value
+    this.removeItem = function(value) {
+        var index = -1;
+
+        $scope.items.forEach(function(item, i) {
+            if (item.value == value)
+                index = i;
         });
 
         if (index > -1)
