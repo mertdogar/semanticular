@@ -1,7 +1,7 @@
 {
   "name": "semanticular",
   "description": "Angular.js directives for Semantic UI Modules",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "authors": [
     "Deniz Gurkaynak <dgurkaynak@gmail.com>"
   ],
