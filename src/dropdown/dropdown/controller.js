@@ -1,5 +1,6 @@
 angular.module('semanticular.dropdown').controller('DropdownController', ['$scope', function($scope) {
     $scope.items = [];
+    $scope.control = $scope.control || {};
 
 
     /**
@@ -7,7 +8,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
      * @param {string} text
      * @param {string} value
      */
-    this.addItem = function(title, value) {
+    this.addItem = $scope.control.addItem = function(title, value) {
         $scope.items.push({
             title: title,
             value: value
@@ -19,7 +20,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
      * Removes item.
      * @param {string} value
      */
-    this.removeItem = function(value) {
+    this.removeItem = $scope.control.removeItem = function(value) {
         var index = -1;
 
         $scope.items.forEach(function(item, i) {

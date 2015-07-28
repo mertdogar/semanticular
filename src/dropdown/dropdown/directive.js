@@ -113,7 +113,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
     return {
         restrict: 'E',
         scope: {
-            options: '='
+            options: '=',
+            control: '='
         },
         template: template,
         transclude: true,
