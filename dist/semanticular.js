@@ -2,6 +2,7 @@ angular.module('semanticular.dropdown', []);
 
 angular.module('semanticular.dropdown').controller('DropdownController', ['$scope', function($scope) {
     $scope.items = [];
+    $scope.control = $scope.control || {};
 
 
     /**
@@ -9,7 +10,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
      * @param {string} text
      * @param {string} value
      */
-    this.addItem = function(title, value) {
+    this.addItem = $scope.control.addItem = function(title, value) {
         $scope.items.push({
             title: title,
             value: value
@@ -21,7 +22,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
      * Removes item.
      * @param {string} value
      */
-    this.removeItem = function(value) {
+    this.removeItem = $scope.control.removeItem = function(value) {
         var index = -1;
 
         $scope.items.forEach(function(item, i) {
@@ -66,6 +67,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         transition: 'auto',
         duration: 200,
         apiSettings: false,
+        saveRemoteData: true,
+        showOnFocus: true,
         extraClasses: [],
         message: {},
         onChange: function() {},
@@ -111,6 +114,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
                     transition: options.transition,
                     duration: options.duration,
                     apiSettings: options.apiSettings,
+                    saveRemoteData: options.saveRemoteData,
+                    showOnFocus: options.showOnFocus,
                     message: options.message,
                     onChange: function(val) {
                         if (options.allowMultipleSelection)
@@ -145,7 +150,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
     return {
         restrict: 'E',
         scope: {
-            options: '='
+            options: '=',
+            control: '='
         },
         template: template,
         transclude: true,
