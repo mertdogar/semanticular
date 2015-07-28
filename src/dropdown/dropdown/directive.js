@@ -30,6 +30,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         transition: 'auto',
         duration: 200,
         apiSettings: false,
+        saveRemoteData: true,
+        showOnFocus: true,
         extraClasses: [],
         message: {},
         onChange: function() {},
@@ -75,6 +77,8 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
                     transition: options.transition,
                     duration: options.duration,
                     apiSettings: options.apiSettings,
+                    saveRemoteData: options.saveRemoteData,
+                    showOnFocus: options.showOnFocus,
                     message: options.message,
                     onChange: function(val) {
                         if (options.allowMultipleSelection)
