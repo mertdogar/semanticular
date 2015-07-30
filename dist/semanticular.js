@@ -119,7 +119,7 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
                     message: options.message,
                     onChange: function(val) {
                         if (options.allowMultipleSelection)
-                            val = val.split(',');
+                            val = val ? val.split(',') : [];
 
                         ngModel.$setViewValue(val);
                         options.onChange(val);
