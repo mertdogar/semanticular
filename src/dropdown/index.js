@@ -1,1 +1,1 @@
-angular.module('semanticular.dropdown', []);
+angular.module('semanticular.dropdown', ['semanticular.onfinishrender']);

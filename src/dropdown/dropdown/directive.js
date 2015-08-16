@@ -10,7 +10,7 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
             '<div class="default text">{{placeholder}}</div>' +
             '<div class="menu">' +
                 '<div class="item" ng-repeat="item in items" ' +
-                    'data-value="{{item.value}}">{{item.title}}</div>' +
+                    'data-value="{{item.value}}" on-finish-render>{{item.title}}</div>' +
             '</div>' +
             '<div ng-transclude style="display: none;"></div>' +
         '</div>';
@@ -61,47 +61,52 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         var modelListener = scope.$watch(function() {
             return ngModel.$modelValue;
         }, function(val) {
-            $timeout(function() {
-                $element.dropdown('set selected', ngModel.$modelValue);
-            });
+            scope.select();
         });
+
+
+        scope.$on('ngRepeatFinished', function() {
+            scope.select();
+        });
+
+        scope.select = function() {
+            $element.dropdown('set selected', ngModel.$modelValue);
+        };
 
         // Initalize dropdown
-        $timeout(function() {
-            $element
-                .addClass(options.extraClasses.join(' '))
-                .dropdown({
-                    allowAdditions: options.allowAdditions,
-                    maxSelections: options.maxSelections,
-                    fullTextSearch: options.fullTextSearch,
-                    transition: options.transition,
-                    duration: options.duration,
-                    apiSettings: options.apiSettings,
-                    saveRemoteData: options.saveRemoteData,
-                    showOnFocus: options.showOnFocus,
-                    message: options.message,
-                    onChange: function(val) {
-                        if (options.allowMultipleSelection)
-                            val = val ? val.split(',') : [];
+        $element
+            .addClass(options.extraClasses.join(' '))
+            .dropdown({
+                allowAdditions: options.allowAdditions,
+                maxSelections: options.maxSelections,
+                fullTextSearch: options.fullTextSearch,
+                transition: options.transition,
+                duration: options.duration,
+                apiSettings: options.apiSettings,
+                saveRemoteData: options.saveRemoteData,
+                showOnFocus: options.showOnFocus,
+                message: options.message,
+                onChange: function(val) {
+                    if (options.allowMultipleSelection)
+                        val = val ? val.split(',') : [];
 
-                        ngModel.$setViewValue(val);
-                        options.onChange(val);
-                        scope.$apply();
-                    },
-                    onNoResults: function(val) {
-                        options.onNoResults(val);
-                        scope.$apply();
-                    },
-                    onShow: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                    onHide: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                });
-        });
+                    ngModel.$setViewValue(val);
+                    options.onChange(val);
+                    scope.$apply();
+                },
+                onNoResults: function(val) {
+                    options.onNoResults(val);
+                    scope.$apply();
+                },
+                onShow: function() {
+                    options.onShow();
+                    scope.$apply();
+                },
+                onHide: function() {
+                    options.onShow();
+                    scope.$apply();
+                },
+            });
 
         // Clear model listener on destroy
         scope.$on('$destroy', function() {

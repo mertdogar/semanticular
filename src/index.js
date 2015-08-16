@@ -1,4 +1,5 @@
 angular.module('semanticular', [
+    'semanticular.onfinishrender',
     'semanticular.dropdown',
     'semanticular.modal',
     'semanticular.popup',

@@ -6,6 +6,8 @@ var gulp = require('gulp'),
 gulp.task('scripts', function() {
     return gulp
             .src([
+                './src/onfinishrender/index.js',
+                './src/onfinishrender/onfinishrender.js',
                 './src/dropdown/index.js',
                 './src/dropdown/dropdown/*.js',
                 './src/dropdown/dropdown-item/*.js',
