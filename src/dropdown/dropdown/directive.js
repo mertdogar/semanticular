@@ -57,17 +57,13 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         // Expose some options to view
         scope.placeholder = attrs.placeholder || options.placeholder;
 
-        scope.refreshValue = function () {
-            $timeout(function(){
-                $element.dropdown('set selected', ngModel.$modelValue);
-            });
-        };
-
         // Listen ng-model's value
         var modelListener = scope.$watch(function() {
             return ngModel.$modelValue;
         }, function(val) {
-            scope.refreshValue();
+            $timeout(function() {
+                $element.dropdown('set selected', ngModel.$modelValue);
+            });
         });
 
         // Initalize dropdown
