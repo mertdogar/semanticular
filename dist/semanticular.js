@@ -33,6 +33,13 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
         if (index > -1)
             $scope.items.splice(index, 1);
     };
+
+    /**
+     * Refreshes value.
+     */
+    this.refreshValue = $scope.control.refreshValue = function() {
+        $scope.refreshValue();
+    };
 }]);
 
 angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', function($timeout) {
@@ -94,13 +101,17 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         // Expose some options to view
         scope.placeholder = attrs.placeholder || options.placeholder;
 
+        scope.refreshValue = function () {
+            $timeout(function(){
+                $element.dropdown('set selected', ngModel.$modelValue);
+            });
+        };
+
         // Listen ng-model's value
         var modelListener = scope.$watch(function() {
             return ngModel.$modelValue;
         }, function(val) {
-            $timeout(function() {
-                $element.dropdown('set selected', ngModel.$modelValue);
-            });
+            scope.refreshValue();
         });
 
         // Initalize dropdown
@@ -173,9 +184,14 @@ angular.module('semanticular.dropdown').directive('dropdownItem', function() {
         // Add item
         dropdownController.addItem(title, value);
 
+        var itemsListener = scope.$watch('items', function() {
+            dropdownController.refreshValue();
+        });
+
         // Listen destroy event and remove item
         scope.$on('$destroy', function() {
             dropdownController.removeItem(value);
+            itemsListener();
         });
     };
 
