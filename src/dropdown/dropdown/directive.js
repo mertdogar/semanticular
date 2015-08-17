@@ -1,4 +1,4 @@
-angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', function($timeout) {
+angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', '$compile', function($timeout, $compile) {
     /**
      * Template of directive.
      * @type {String}
@@ -63,6 +63,14 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         }, function(val) {
             scope.select();
         });
+
+        scope.control.refreshMenu = function() {
+            var template = '<div class="item" ng-repeat="item in items" ' +
+                    'data-value="{{item.value}}" on-finish-render>{{item.title}}</div>';
+            var linkFn = $compile(template);
+            var content = linkFn(scope);
+            $element.find('.menu').html(content);
+        };
 
 
         scope.$on('ngRepeatFinished', function() {
