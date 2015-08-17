@@ -9,9 +9,14 @@ angular.module('semanticular.dropdown').directive('dropdownItem', function() {
         // Add item
         dropdownController.addItem(title, value);
 
+        var itemsListener = scope.$watch('items', function() {
+            dropdownController.refreshValue();
+        });
+
         // Listen destroy event and remove item
         scope.$on('$destroy', function() {
             dropdownController.removeItem(value);
+            itemsListener();
         });
     };
 
