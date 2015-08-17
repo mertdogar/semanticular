@@ -31,4 +31,13 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
         if (index > -1)
             $scope.items.splice(index, 1);
     };
+
+
+    /**
+     * Removes all items.
+     * @param {string} value
+     */
+    this.removeItems = $scope.control.removeItems = function() {
+        $scope.items = [];
+    };
 }]);
