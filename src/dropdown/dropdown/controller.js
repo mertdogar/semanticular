@@ -31,11 +31,4 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
         if (index > -1)
             $scope.items.splice(index, 1);
     };
-
-    /**
-     * Refreshes value.
-     */
-    this.refreshValue = $scope.control.refreshValue = function() {
-        $scope.refreshValue();
-    };
 }]);
