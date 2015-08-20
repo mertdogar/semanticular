@@ -19,12 +19,22 @@ angular.module('myApp', ['semanticular.dropdown']).controller('DemoController', 
         {
             title: 'Item 4',
             value: 'item4'
+        },
+        {
+            title: 'Item 5',
+            value: 'item5'
         }
     ];
 
-    $scope.dropdownValue2 = [];
+    $scope.dropdownValue2 = ['item4'];
 
     $scope.dropdownOptions2 = {
+        placeholder: 'Multiple search',
+        allowSearch: true,
+        allowMultipleSelection: true
+    };
+
+    $scope.dropdownOptions3 = {
         placeholder: 'Remote search',
         allowSearch: true,
         allowMultipleSelection: true,

@@ -1,4 +1,4 @@
-angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', function($timeout) {
+angular.module('semanticular.dropdown').directive('dropdown', [function() {
     /**
      * Template of directive.
      * @type {String}
@@ -7,38 +7,16 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         '<div class="ui selection dropdown">' +
             '<input type="hidden" name="">' +
             '<i class="dropdown icon"></i>' +
-            '<div class="default text">{{placeholder}}</div>' +
+            '<div class="default text"></div>' +
             '<div class="menu">' +
                 '<div class="item" ng-repeat="item in items" ' +
-                    'data-value="{{item.value}}">{{item.title}}</div>' +
+                        'data-value="{{item.value}}" ' +
+                        'ng-class="{filtered: isValueSelected(item.value)}">' +
+                    '{{item.title}}' +
+                '</div>' +
             '</div>' +
             '<div ng-transclude style="display: none;"></div>' +
         '</div>';
-
-
-    /**
-     * Default options.
-     * @type {Object}
-     */
-    var defaults = {
-        placeholder: '',
-        allowSearch: false,
-        allowMultipleSelection: false,
-        allowAdditions: false,
-        maxSelections: false,
-        fullTextSearch: false,
-        transition: 'auto',
-        duration: 200,
-        apiSettings: false,
-        saveRemoteData: true,
-        showOnFocus: true,
-        extraClasses: [],
-        message: {},
-        onChange: function() {},
-        onNoResults: function() {},
-        onShow: function() {},
-        onHide: function() {},
-    };
 
 
     /**
@@ -46,61 +24,62 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
      */
     var link = function(scope, $element, attrs, ngModel) {
         $element = $($element[0]);
-        var options = $.extend(true, {}, defaults, scope.options || {});
+        var extraClasses = [];
 
-        if (options.allowSearch)
-            options.extraClasses.push('search');
+        if (scope.options.allowSearch)
+            extraClasses.push('search');
 
-        if (options.allowMultipleSelection)
-            options.extraClasses.push('multiple');
+        if (scope.options.allowMultipleSelection)
+            extraClasses.push('multiple');
 
-        // Expose some options to view
-        scope.placeholder = attrs.placeholder || options.placeholder;
-
-        // Listen ng-model's value
-        var modelListener = scope.$watch(function() {
-            return ngModel.$modelValue;
-        }, function(val) {
-            $timeout(function() {
-                $element.dropdown('set selected', ngModel.$modelValue);
-            });
-        });
+        // Manually add placeholder
+        $element
+            .find('.default.text')
+            .text(scope.options.placeholder || '');
 
         // Initalize dropdown
-        $timeout(function() {
-            $element
-                .addClass(options.extraClasses.join(' '))
-                .dropdown({
-                    allowAdditions: options.allowAdditions,
-                    maxSelections: options.maxSelections,
-                    fullTextSearch: options.fullTextSearch,
-                    transition: options.transition,
-                    duration: options.duration,
-                    apiSettings: options.apiSettings,
-                    saveRemoteData: options.saveRemoteData,
-                    showOnFocus: options.showOnFocus,
-                    message: options.message,
-                    onChange: function(val) {
-                        if (options.allowMultipleSelection)
-                            val = val ? val.split(',') : [];
+        $element
+            .addClass(extraClasses.join(' '))
+            .dropdown(scope.options);
 
-                        ngModel.$setViewValue(val);
-                        options.onChange(val);
-                        scope.$apply();
-                    },
-                    onNoResults: function(val) {
-                        options.onNoResults(val);
-                        scope.$apply();
-                    },
-                    onShow: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                    onHide: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                });
+        // Sets view value
+        scope.control.setViewValue = function(value, opt_force) {
+            if (_.isEqual(scope.control.getViewValue(), value))
+                return;
+
+            var command = 'set selected';
+
+            if (scope.options.allowMultipleSelection)
+                command = 'set exactly';
+
+            $element.dropdown(command, value);
+
+            // Check if it's set selected indeed. While initalizing sometimes
+            // this does not work.
+            if (opt_force) {
+                var viewValue = scope.control.getViewValue();
+
+                if (!_.isEqual(viewValue, value)) {
+                    setTimeout(
+                        scope.control.setViewValue.bind(null, value, opt_force),
+                        10
+                    );
+                }
+            }
+        };
+
+        // Gets view value
+        scope.control.getViewValue = function() {
+            var viewValue = $element.dropdown('get value');
+            if (scope.options.allowMultipleSelection)
+                viewValue = viewValue ? viewValue.split(',') : [];
+
+            return viewValue;
+        };
+
+        // Listen ng-model's value
+        var modelListener = scope.$watch('model', function(val) {
+            scope.control.setViewValue(scope.model, true);
         });
 
         // Clear model listener on destroy
@@ -113,12 +92,12 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
     return {
         restrict: 'E',
         scope: {
-            options: '=',
+            model: '=ngModel',
+            options: '=?',
             control: '=?'
         },
         template: template,
         transclude: true,
-        require: 'ngModel',
         replace: true,
         controller: 'DropdownController',
         link: link

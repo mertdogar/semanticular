@@ -17,12 +17,19 @@
         <dropdown-item>Deneme item 2</dropdown-item>
         <dropdown-item ng-repeat="item in items" title="item.title" value="item.value"></dropdown-item>
     </dropdown>
+    <button ng-click="dropdownValue = 'Deneme item 2'">Set to item 2</button>
     <div>Selected Value: {{dropdownValue}}</div>
 
-    <dropdown ng-model="dropdownValue2" options="dropdownOptions2"></dropdown>
+    <br /><br />
+
+    <dropdown ng-model="dropdownValue2" options="dropdownOptions2">
+        <dropdown-item ng-repeat="item in items" title="item.title" value="item.value"></dropdown-item>
+    </dropdown>
+    <button ng-click="dropdownValue2 = ['item3', 'item5']">Set to item 3 and 5</button>
     <div>Selected Value: {{dropdownValue2}}</div>
 
     <script src="/bower_components/angular/angular.min.js"></script>
+    <script src="/bower_components/lodash/lodash.min.js"></script>
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/semantic/dist/semantic.min.js"></script>
     <script src="/src/dropdown/index.js"></script>
