@@ -109,6 +109,12 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             $element[action]('loading');
         };
 
+        // Clears input
+        scope.control.clearInput = function() {
+            if (searchInputElement)
+                searchInputElement.value = '';
+        };
+
         // Listen ng-model's value
         var modelListener = scope.$watch('model', function(val) {
             scope.control.setViewValue(scope.model, true);

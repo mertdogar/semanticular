@@ -21,6 +21,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
      */
     var onChangeOriginal = $scope.options.onChange;
     $scope.options.onChange = function(val) {
+        $scope.control.clearInput();
+
         if ($scope.options.allowMultipleSelection)
             val = val ? val.split(',') : [];
 
