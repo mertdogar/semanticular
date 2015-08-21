@@ -1,8 +1,54 @@
 angular.module('semanticular.dropdown', []);
 
-angular.module('semanticular.dropdown').controller('DropdownController', ['$scope', function($scope) {
+angular.module('semanticular.dropdown').controller('DropdownController', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+    /**
+     * Default options.
+     * @type {Object}
+     */
+    var defaults = {
+        placeholder: '',
+        allowSearch: false,
+        allowMultipleSelection: false
+    };
+
+
     $scope.items = [];
     $scope.control = $scope.control || {};
+    $scope.options = $.extend(true, {}, defaults, $scope.options || {});
+    $scope.intentedChangeValue = null;
+
+
+    /**
+     * Save original onChange handler in options, we will intercept that event.
+     */
+    var onChangeOriginal = $scope.options.onChange;
+    $scope.options.onChange = function(val) {
+        if ($scope.options.allowMultipleSelection)
+            val = val ? val.split(',') : [];
+
+        if ($scope.intentedChangeValue && !$scope.isEqualValues($scope.intentedChangeValue, val)) {
+            if ($scope.options.log)
+                console.log('Changed value & intented change mismatch, discarding onChange event.');
+                
+            return;
+        }
+
+        $scope.intentedChangeValue = null;
+
+        if (!$scope.isEqualValues($scope.model, val)) {
+            if ($scope.options.log)
+                console.log('Settings model value...', val);
+
+            $scope.model = val;
+
+            onChangeOriginal && onChangeOriginal(val);
+
+            // Sorry for anti pattern. There is no way to find out that
+            // this method is called because model change or view change
+            if (!$rootScope.$$phase)
+                $scope.$apply()
+        }
+    };
 
 
     /**
@@ -34,15 +80,89 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$scop
             $scope.items.splice(index, 1);
     };
 
+
     /**
-     * Refreshes value.
+     * Removes all items.
      */
-    this.refreshValue = $scope.control.refreshValue = function() {
-        $scope.refreshValue();
+    $scope.clearItems = $scope.control.clearItems = function() {
+        $scope.items = [];
+    };
+
+
+    /**
+     * On input change event handler.
+     * @param {Object} e
+     */
+    $scope.onInputChange = function(e) {
+        var remote = $scope.options.remote,
+            value = e.target.value.trim();
+
+        $scope.remoteFetch_(value);
+        remote.onInputChange && remote.onInputChange(value);
+    };
+
+
+    /**
+     * Fetches remote data.
+     * @param {?string} value
+     */
+    $scope.remoteFetch_ = function(value) {
+        var remote = $scope.options.remote,
+            url;
+
+        if (!remote)
+            return;
+
+        if (typeof remote.beforeSend === 'function') {
+             url = remote.beforeSend(remote.url, value);
+
+             if (!url)
+                return;
+        } else
+            url = remote.url.replace('{query}', encodeURIComponent(value));
+
+        $http
+            .get(url)
+            .then(function(response) {
+                if (response.status >= 300)
+                    throw new Error('Bad response');
+
+                var data = response.data;
+                if (typeof remote.onResponse === 'function')
+                    data = remote.onResponse(data, value);
+
+                if (!_.isArray(data))
+                    data = [];
+
+                $scope.items = data;
+            });
+    };
+
+
+    /**
+     * Debounced remoteFetch_ method.
+     */
+    $scope.remoteFetch = _.debounce($scope.remoteFetch_, 250);
+
+
+    /**
+     * Checks value equality. If values are array, the order is not important
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    $scope.isEqualValues = function(a, b) {
+        if (!$scope.options.allowMultipleSelection)
+            return a == b;
+
+        a = _.sortBy(a);
+        b = _.sortBy(b);
+
+        return _.isEqual(a, b);
     };
 }]);
 
-angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', function($timeout) {
+angular.module('semanticular.dropdown').directive('dropdown', [function() {
     /**
      * Template of directive.
      * @type {String}
@@ -51,38 +171,15 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
         '<div class="ui selection dropdown">' +
             '<input type="hidden" name="">' +
             '<i class="dropdown icon"></i>' +
-            '<div class="default text">{{placeholder}}</div>' +
+            '<div class="default text"></div>' +
             '<div class="menu">' +
                 '<div class="item" ng-repeat="item in items" ' +
-                    'data-value="{{item.value}}">{{item.title}}</div>' +
+                        'data-value="{{item.value}}">' +
+                    '{{item.title}}' +
+                '</div>' +
             '</div>' +
             '<div ng-transclude style="display: none;"></div>' +
         '</div>';
-
-
-    /**
-     * Default options.
-     * @type {Object}
-     */
-    var defaults = {
-        placeholder: '',
-        allowSearch: false,
-        allowMultipleSelection: false,
-        allowAdditions: false,
-        maxSelections: false,
-        fullTextSearch: false,
-        transition: 'auto',
-        duration: 200,
-        apiSettings: false,
-        saveRemoteData: true,
-        showOnFocus: true,
-        extraClasses: [],
-        message: {},
-        onChange: function() {},
-        onNoResults: function() {},
-        onShow: function() {},
-        onHide: function() {},
-    };
 
 
     /**
@@ -90,70 +187,104 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
      */
     var link = function(scope, $element, attrs, ngModel) {
         $element = $($element[0]);
-        var options = $.extend(true, {}, defaults, scope.options || {});
+        var extraClasses = [],
+            searchInputElement;
 
-        if (options.allowSearch)
-            options.extraClasses.push('search');
+        if (scope.options.allowSearch)
+            extraClasses.push('search');
 
-        if (options.allowMultipleSelection)
-            options.extraClasses.push('multiple');
+        if (scope.options.allowMultipleSelection)
+            extraClasses.push('multiple');
 
-        // Expose some options to view
-        scope.placeholder = attrs.placeholder || options.placeholder;
+        // Manually add placeholder
+        $element
+            .find('.default.text')
+            .text(scope.options.placeholder || '');
 
-        scope.refreshValue = function () {
-            $timeout(function(){
-                $element.dropdown('set selected', ngModel.$modelValue);
-            });
+        // Initalize dropdown
+        $element
+            .addClass(extraClasses.join(' '))
+            .dropdown(scope.options);
+
+        if (scope.options.allowSearch || scope.options.remote) {
+            searchInputElement = $element.find('input.search')[0];
+            searchInputElement.addEventListener('input', scope.onInputChange,
+                false);
+        }
+
+        // Sets view value
+        scope.control.setViewValue = function(value, opt_force) {
+            if (!value || scope.isEqualValues(scope.control.getViewValue(), value))
+                return;
+
+            if (scope.options.log)
+                console.log('Settings view value...', value);
+                
+            var command = 'set selected';
+
+            if (scope.options.allowMultipleSelection)
+                command = 'set exactly';
+            else
+                value += ''; // Stringify the value
+
+            scope.intentedChangeValue = value;
+            $element.dropdown(command, value);
+
+            // Check if it's set selected indeed. While initalizing sometimes
+            // this does not work.
+            if (opt_force) {
+                var viewValue = scope.control.getViewValue();
+
+                if (!scope.isEqualValues(viewValue, value)) {
+                    setTimeout(
+                        scope.control.setViewValue.bind(null, value, opt_force),
+                        10
+                    );
+                }
+            }
+        };
+
+        // Gets view value
+        scope.control.getViewValue = function() {
+            var viewValue = $element.dropdown('get value');
+            if (scope.options.allowMultipleSelection)
+                viewValue = viewValue ? viewValue.split(',') : [];
+
+            return viewValue;
+        };
+
+        // Shows dropdown
+        scope.control.show = function() {
+            $element.dropdown('show');
+        };
+
+        // Hides dropdown
+        scope.control.hide = function() {
+            $element.dropdown('hide');
+        };
+
+        // Show&hide loading
+        scope.control.setLoading = function(value) {
+            var action = 'removeClass';
+
+            if (value)
+                value = 'addClass';
+
+            $element[action]('loading');
         };
 
         // Listen ng-model's value
-        var modelListener = scope.$watch(function() {
-            return ngModel.$modelValue;
-        }, function(val) {
-            scope.refreshValue();
-        });
-
-        // Initalize dropdown
-        $timeout(function() {
-            $element
-                .addClass(options.extraClasses.join(' '))
-                .dropdown({
-                    allowAdditions: options.allowAdditions,
-                    maxSelections: options.maxSelections,
-                    fullTextSearch: options.fullTextSearch,
-                    transition: options.transition,
-                    duration: options.duration,
-                    apiSettings: options.apiSettings,
-                    saveRemoteData: options.saveRemoteData,
-                    showOnFocus: options.showOnFocus,
-                    message: options.message,
-                    onChange: function(val) {
-                        if (options.allowMultipleSelection)
-                            val = val ? val.split(',') : [];
-
-                        ngModel.$setViewValue(val);
-                        options.onChange(val);
-                        scope.$apply();
-                    },
-                    onNoResults: function(val) {
-                        options.onNoResults(val);
-                        scope.$apply();
-                    },
-                    onShow: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                    onHide: function() {
-                        options.onShow();
-                        scope.$apply();
-                    },
-                });
+        var modelListener = scope.$watch('model', function(val) {
+            scope.control.setViewValue(scope.model, true);
         });
 
         // Clear model listener on destroy
         scope.$on('$destroy', function() {
             modelListener();
+
+            if (searchInputElement)
+                searchInputElement.addEventListener('input',
+                    scope.onInputChange, false);
         });
     };
 
@@ -161,12 +292,12 @@ angular.module('semanticular.dropdown').directive('dropdown', ['$timeout', funct
     return {
         restrict: 'E',
         scope: {
-            options: '=',
+            model: '=ngModel',
+            options: '=?',
             control: '=?'
         },
         template: template,
         transclude: true,
-        require: 'ngModel',
         replace: true,
         controller: 'DropdownController',
         link: link
@@ -184,14 +315,9 @@ angular.module('semanticular.dropdown').directive('dropdownItem', function() {
         // Add item
         dropdownController.addItem(title, value);
 
-        var itemsListener = scope.$watch('items', function() {
-            dropdownController.refreshValue();
-        });
-
         // Listen destroy event and remove item
         scope.$on('$destroy', function() {
             dropdownController.removeItem(value);
-            itemsListener();
         });
     };
 
