@@ -115,6 +115,13 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 searchInputElement.value = '';
         };
 
+        // Check dropdown messages like `no results`, if there are items,
+        // remove messages.
+        scope.control.updateMessage = function() {
+            if (scope.items.length > 0)
+                $element.dropdown('remove message');
+        };
+
         // Listen ng-model's value
         var modelListener = scope.$watch('model', function(val) {
             scope.control.setViewValue(scope.model, true);

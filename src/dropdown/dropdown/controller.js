@@ -135,6 +135,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
                     data = [];
 
                 $scope.items = data;
+
+                $scope.control.updateMessage();
             });
     };
 
