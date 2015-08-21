@@ -14,6 +14,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
     $scope.control = $scope.control || {};
     $scope.options = $.extend(true, {}, defaults, $scope.options || {});
     $scope.intentedChangeValue = null;
+    $scope.intentCount = 0;
+    $scope.intentCountLimit = 50;
 
 
     /**
@@ -34,6 +36,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
         }
 
         $scope.intentedChangeValue = null;
+        $scope.intentCount = 0;
 
         if (!$scope.isEqualValues($scope.model, val)) {
             if ($scope.options.log)

@@ -54,8 +54,8 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 return;
 
             if (scope.options.log)
-                console.log('Settings view value...', value);
-                
+                console.log('Settings view value... (#' + scope.intentCount + ')', value);
+
             var command = 'set selected';
 
             if (scope.options.allowMultipleSelection)
@@ -63,7 +63,15 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             else
                 value += ''; // Stringify the value
 
+            if (scope.intentCount >= scope.intentCountLimit) {
+                if (scope.options.log)
+                    console.log('Intent limit is exceed, giving up.');
+
+                return;
+            }
+
             scope.intentedChangeValue = value;
+            scope.intentCount++;
             $element.dropdown(command, value);
 
             // Check if it's set selected indeed. While initalizing sometimes
@@ -74,7 +82,7 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 if (!scope.isEqualValues(viewValue, value)) {
                     setTimeout(
                         scope.control.setViewValue.bind(null, value, opt_force),
-                        10
+                        50
                     );
                 }
             }
