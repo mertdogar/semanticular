@@ -16,6 +16,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
     $scope.control = $scope.control || {};
     $scope.options = $.extend(true, {}, defaults, $scope.options || {});
     $scope.intentedChangeValue = null;
+    $scope.intentCount = 0;
+    $scope.intentCountLimit = 50;
 
 
     /**
@@ -23,6 +25,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
      */
     var onChangeOriginal = $scope.options.onChange;
     $scope.options.onChange = function(val) {
+        $scope.control.clearInput();
+
         if ($scope.options.allowMultipleSelection)
             val = val ? val.split(',') : [];
 
@@ -34,6 +38,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
         }
 
         $scope.intentedChangeValue = null;
+        $scope.intentCount = 0;
 
         if (!$scope.isEqualValues($scope.model, val)) {
             if ($scope.options.log)
@@ -135,6 +140,8 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
                     data = [];
 
                 $scope.items = data;
+
+                $scope.control.updateMessage();
             });
     };
 
@@ -218,8 +225,8 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 return;
 
             if (scope.options.log)
-                console.log('Settings view value...', value);
-                
+                console.log('Settings view value... (#' + scope.intentCount + ')', value);
+
             var command = 'set selected';
 
             if (scope.options.allowMultipleSelection)
@@ -227,7 +234,15 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             else
                 value += ''; // Stringify the value
 
+            if (scope.intentCount >= scope.intentCountLimit) {
+                if (scope.options.log)
+                    console.log('Intent limit is exceed, giving up.');
+
+                return;
+            }
+
             scope.intentedChangeValue = value;
+            scope.intentCount++;
             $element.dropdown(command, value);
 
             // Check if it's set selected indeed. While initalizing sometimes
@@ -238,7 +253,7 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 if (!scope.isEqualValues(viewValue, value)) {
                     setTimeout(
                         scope.control.setViewValue.bind(null, value, opt_force),
-                        10
+                        50
                     );
                 }
             }
@@ -271,6 +286,19 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 value = 'addClass';
 
             $element[action]('loading');
+        };
+
+        // Clears input
+        scope.control.clearInput = function() {
+            if (searchInputElement)
+                searchInputElement.value = '';
+        };
+
+        // Check dropdown messages like `no results`, if there are items,
+        // remove messages.
+        scope.control.updateMessage = function() {
+            if (scope.items.length > 0)
+                $element.dropdown('remove message');
         };
 
         // Listen ng-model's value
