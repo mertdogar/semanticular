@@ -31,31 +31,32 @@ angular.module('myApp', ['semanticular.dropdown']).controller('DemoController', 
     $scope.dropdownOptions2 = {
         placeholder: 'Multiple search',
         allowSearch: true,
-        allowMultipleSelection: true
+        allowMultipleSelection: true,
+        onChange: function(val) {
+            console.log('New value of dropdown is ' + val);
+        }
     };
+
+    $scope.dropdownValue3 = [];
 
     $scope.dropdownOptions3 = {
         placeholder: 'Remote search',
         allowSearch: true,
         allowMultipleSelection: true,
-        allowAdditions: true,
         maxSelections: 3,
-        apiSettings: {
-            url: '//api.github.com/search/repositories?q={query}',
+        remote: {
+            url: 'http://api.github.com/search/repositories?q={query}',
             onResponse: function(response) {
                 var repos = [];
 
                 for (var i in response.items) {
                     repos.push({
-                        name: response.items[i].name,
-                        value: response.items[i].name
+                        title: response.items[i].name,
+                        value: response.items[i].id
                     });
                 }
 
-                return {
-                    success: true,
-                    results: repos
-                };
+                return repos;
             }
         },
         onChange: function(val) {

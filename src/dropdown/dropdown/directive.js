@@ -10,8 +10,7 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             '<div class="default text"></div>' +
             '<div class="menu">' +
                 '<div class="item" ng-repeat="item in items" ' +
-                        'data-value="{{item.value}}" ' +
-                        'ng-class="{filtered: isValueSelected(item.value)}">' +
+                        'data-value="{{item.value}}">' +
                     '{{item.title}}' +
                 '</div>' +
             '</div>' +
@@ -24,7 +23,8 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
      */
     var link = function(scope, $element, attrs, ngModel) {
         $element = $($element[0]);
-        var extraClasses = [];
+        var extraClasses = [],
+            searchInputElement;
 
         if (scope.options.allowSearch)
             extraClasses.push('search');
@@ -42,16 +42,28 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             .addClass(extraClasses.join(' '))
             .dropdown(scope.options);
 
+        if (scope.options.allowSearch || scope.options.remote) {
+            searchInputElement = $element.find('input.search')[0];
+            searchInputElement.addEventListener('input', scope.onInputChange,
+                false);
+        }
+
         // Sets view value
         scope.control.setViewValue = function(value, opt_force) {
-            if (_.isEqual(scope.control.getViewValue(), value))
+            if (!value || scope.isEqualValues(scope.control.getViewValue(), value))
                 return;
 
+            if (scope.options.log)
+                console.log('Settings view value...', value);
+                
             var command = 'set selected';
 
             if (scope.options.allowMultipleSelection)
                 command = 'set exactly';
+            else
+                value += ''; // Stringify the value
 
+            scope.intentedChangeValue = value;
             $element.dropdown(command, value);
 
             // Check if it's set selected indeed. While initalizing sometimes
@@ -59,7 +71,7 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             if (opt_force) {
                 var viewValue = scope.control.getViewValue();
 
-                if (!_.isEqual(viewValue, value)) {
+                if (!scope.isEqualValues(viewValue, value)) {
                     setTimeout(
                         scope.control.setViewValue.bind(null, value, opt_force),
                         10
@@ -77,6 +89,26 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
             return viewValue;
         };
 
+        // Shows dropdown
+        scope.control.show = function() {
+            $element.dropdown('show');
+        };
+
+        // Hides dropdown
+        scope.control.hide = function() {
+            $element.dropdown('hide');
+        };
+
+        // Show&hide loading
+        scope.control.setLoading = function(value) {
+            var action = 'removeClass';
+
+            if (value)
+                value = 'addClass';
+
+            $element[action]('loading');
+        };
+
         // Listen ng-model's value
         var modelListener = scope.$watch('model', function(val) {
             scope.control.setViewValue(scope.model, true);
@@ -85,6 +117,10 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
         // Clear model listener on destroy
         scope.$on('$destroy', function() {
             modelListener();
+
+            if (searchInputElement)
+                searchInputElement.addEventListener('input',
+                    scope.onInputChange, false);
         });
     };
 

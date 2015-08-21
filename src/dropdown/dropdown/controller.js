@@ -1,4 +1,4 @@
-angular.module('semanticular.dropdown').controller('DropdownController', ['$rootScope', '$scope', function($rootScope, $scope) {
+angular.module('semanticular.dropdown').controller('DropdownController', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
     /**
      * Default options.
      * @type {Object}
@@ -13,6 +13,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
     $scope.items = [];
     $scope.control = $scope.control || {};
     $scope.options = $.extend(true, {}, defaults, $scope.options || {});
+    $scope.intentedChangeValue = null;
 
 
     /**
@@ -23,7 +24,19 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
         if ($scope.options.allowMultipleSelection)
             val = val ? val.split(',') : [];
 
-        if (!_.isEqual($scope.model, val)) {
+        if ($scope.intentedChangeValue && !$scope.isEqualValues($scope.intentedChangeValue, val)) {
+            if ($scope.options.log)
+                console.log('Changed value & intented change mismatch, discarding onChange event.');
+                
+            return;
+        }
+
+        $scope.intentedChangeValue = null;
+
+        if (!$scope.isEqualValues($scope.model, val)) {
+            if ($scope.options.log)
+                console.log('Settings model value...', val);
+
             $scope.model = val;
 
             onChangeOriginal && onChangeOriginal(val);
@@ -69,20 +82,80 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
     /**
      * Removes all items.
      */
-    this.clearItems = $scope.control.clearItems = function() {
+    $scope.clearItems = $scope.control.clearItems = function() {
         $scope.items = [];
     };
 
 
     /**
-     * Returns whether given value is selected or not.
-     * @param {string} value
+     * On input change event handler.
+     * @param {Object} e
+     */
+    $scope.onInputChange = function(e) {
+        var remote = $scope.options.remote,
+            value = e.target.value.trim();
+
+        $scope.remoteFetch_(value);
+        remote.onInputChange && remote.onInputChange(value);
+    };
+
+
+    /**
+     * Fetches remote data.
+     * @param {?string} value
+     */
+    $scope.remoteFetch_ = function(value) {
+        var remote = $scope.options.remote,
+            url;
+
+        if (!remote)
+            return;
+
+        if (typeof remote.beforeSend === 'function') {
+             url = remote.beforeSend(remote.url, value);
+
+             if (!url)
+                return;
+        } else
+            url = remote.url.replace('{query}', encodeURIComponent(value));
+
+        $http
+            .get(url)
+            .then(function(response) {
+                if (response.status >= 300)
+                    throw new Error('Bad response');
+
+                var data = response.data;
+                if (typeof remote.onResponse === 'function')
+                    data = remote.onResponse(data, value);
+
+                if (!_.isArray(data))
+                    data = [];
+
+                $scope.items = data;
+            });
+    };
+
+
+    /**
+     * Debounced remoteFetch_ method.
+     */
+    $scope.remoteFetch = _.debounce($scope.remoteFetch_, 250);
+
+
+    /**
+     * Checks value equality. If values are array, the order is not important
+     * @param {*} a
+     * @param {*} b
      * @return {boolean}
      */
-    $scope.isValueSelected = function(value) {
-        if ($scope.options.allowMultipleSelection)
-            return $scope.model.indexOf(value) > -1;
+    $scope.isEqualValues = function(a, b) {
+        if (!$scope.options.allowMultipleSelection)
+            return a == b;
 
-        return $scope.model == value;
+        a = _.sortBy(a);
+        b = _.sortBy(b);
+
+        return _.isEqual(a, b);
     };
 }]);
