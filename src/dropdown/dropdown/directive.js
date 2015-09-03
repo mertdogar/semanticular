@@ -130,6 +130,25 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
                 $element.dropdown('remove message');
         };
 
+        // Sets dropdown selected text
+        scope.control.setText = function(text) {
+            $element.dropdown('set text', text);
+        };
+
+        // Refreshes dropdown selected text
+        scope.control.refreshText = function() {
+            if (!scope.model)
+                return;
+
+            var result = _.find(scope.items, {value: scope.model}),
+                text = result ? result.title : null;
+
+            if (!text)
+                return;
+
+            $element.dropdown('set text', text);
+        };
+
         // Listen ng-model's value
         var modelListener = scope.$watch('model', function(val) {
             scope.control.setViewValue(scope.model, true);

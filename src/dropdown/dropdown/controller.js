@@ -31,7 +31,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
         if ($scope.intentedChangeValue && !$scope.isEqualValues($scope.intentedChangeValue, val)) {
             if ($scope.options.log)
                 console.log('Changed value & intented change mismatch, discarding onChange event.');
-                
+
             return;
         }
 
