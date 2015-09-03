@@ -33,7 +33,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
         if ($scope.intentedChangeValue && !$scope.isEqualValues($scope.intentedChangeValue, val)) {
             if ($scope.options.log)
                 console.log('Changed value & intented change mismatch, discarding onChange event.');
-                
+
             return;
         }
 
@@ -299,6 +299,25 @@ angular.module('semanticular.dropdown').directive('dropdown', [function() {
         scope.control.updateMessage = function() {
             if (scope.items.length > 0)
                 $element.dropdown('remove message');
+        };
+
+        // Sets dropdown selected text
+        scope.control.setText = function(text) {
+            $element.dropdown('set text', text);
+        };
+
+        // Refreshes dropdown selected text
+        scope.control.refreshText = function() {
+            if (!scope.model)
+                return;
+
+            var result = _.find(scope.items, {value: scope.model}),
+                text = result ? result.title : null;
+
+            if (!text)
+                return;
+
+            $element.dropdown('set text', text);
         };
 
         // Listen ng-model's value
