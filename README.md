@@ -14,7 +14,7 @@ Angular.js directives for semantic ui modules. Check `demos/` folder for usages.
 
 ## Installation
 
-* Include angular, semantic ui (and its dependency jQuery).
+* Include angular, ngSanitize, semantic ui (and its dependency jQuery).
 
 * Install semanticular
 ```
