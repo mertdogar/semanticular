@@ -1,4 +1,4 @@
-angular.module('semanticular.dropdown').controller('DropdownController', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+angular.module('semanticular.dropdown').controller('DropdownController', ['$rootScope', '$scope', '$http', '$sanitize', function($rootScope, $scope, $http, $sanitize) {
     /**
      * Default options.
      * @type {Object}
@@ -61,7 +61,7 @@ angular.module('semanticular.dropdown').controller('DropdownController', ['$root
      */
     this.addItem = $scope.control.addItem = function(title, value) {
         $scope.items.push({
-            title: title,
+            title: $sanitize(title),
             value: value
         });
     };
